@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donor Management - Blood Bank System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/modern.css}" rel="stylesheet"/>
+</head>
+<body>
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a th:href="@{/}" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <span>Blood Bank</span>
+            </a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a th:href="@{/}" class="nav-link">
+                    <div class="nav-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <span>Dashboard</span>
+                </a>
+                <a th:href="@{/donors}" class="nav-link active">
+                    <div class="nav-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span>Donors</span>
+                </a>
+                <a th:href="@{/requests}" class="nav-link">
+                    <div class="nav-icon">
+                        <i class="fas fa-hand-holding-medical"></i>
+                    </div>
+                    <span>Requests</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Management</div>
+                <a th:href="@{/stock}" class="nav-link">
+                    <div class="nav-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <span>Blood Stock</span>
+                </a>
+                <a th:href="@{/appointments}" class="nav-link">
+                    <div class="nav-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <span>Appointments</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search donors by name, email, blood group...">
+            </div>
+            
+            <div class="header-actions">
+                <div class="notification-dropdown">
+                    <button class="notification-btn" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <div class="notification-menu" id="notificationMenu" style="display: none;">
+                        <div class="notification-header">
+                            <h6>Notifications</h6>
+                            <button class="btn-close" onclick="toggleNotifications()"></button>
+                        </div>
+                        <div class="notification-body">
+                            <div class="notification-item">
+                                <div class="notification-icon warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <div class="notification-title">Pending Blood Requests</div>
+                                    <div class="notification-text">3 requests awaiting approval</div>
+                                    <div class="notification-time">Just now</div>
+                                </div>
+                                <a th:href="@{/requests}" class="notification-action">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-icon success">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <div class="notification-title">New Donor Registered</div>
+                                    <div class="notification-text">John Doe registered as a new donor</div>
+                                    <div class="notification-time">2 hours ago</div>
+                                </div>
+                                <a th:href="@{/donors}" class="notification-action">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="notification-footer">
+                            <a th:href="@{/requests}" class="btn btn-sm btn-primary">View All Notifications</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">A</div>
+                    <div class="user-info">
+                        <div class="user-name">Admin User</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                    <form th:action="@{/logout}" method="post" style="display:inline;">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="btn btn-outline ms-2">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="content">
+            <div class="page-header">
+                <h1 class="page-title">Donor Management</h1>
+                <p class="page-subtitle">Register and manage blood donors in the system</p>
+            </div>
+
+            <!-- Donor Registration Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="card-title">Register New Donor</h2>
+                    <button class="btn btn-primary" onclick="toggleForm()">
+                        <i class="fas fa-plus"></i>
+                        Add Donor
+                    </button>
+                </div>
+                <div class="card-body" id="donorForm" style="display: none;">
+                    <form th:action="@{/donors}" method="post" th:object="${donor}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" th:field="*{name}" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" th:field="*{email}" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" th:field="*{phone}" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Age</label>
+                                    <input type="number" class="form-control" th:field="*{age}" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Gender</label>
+                                    <select class="form-control" th:field="*{gender}" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Blood Group</label>
+                                    <select class="form-control" th:field="*{bloodGroup}" required>
+                                        <option value="">Select Blood Group</option>
+                                        <option value="A_POS">A+</option>
+                                        <option value="A_NEG">A-</option>
+                                        <option value="B_POS">B+</option>
+                                        <option value="B_NEG">B-</option>
+                                        <option value="AB_POS">AB+</option>
+                                        <option value="AB_NEG">AB-</option>
+                                        <option value="O_POS">O+</option>
+                                        <option value="O_NEG">O-</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">Address</label>
+                                    <textarea class="form-control" th:field="*{address}" rows="3" required></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label">City</label>
+                                    <input type="text" class="form-control" th:field="*{city}" required />
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i>
+                                    Register Donor
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="toggleForm()">
+                                    <i class="fas fa-times"></i>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Donors List -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Registered Donors</h2>
+                    <div class="d-flex gap-2">
+                        <div class="search-bar" style="width: 300px;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search donors...">
+                        </div>
+                        <select class="form-control" style="width: 150px;">
+                            <option value="">All Blood Groups</option>
+                            <option value="A_POS">A+</option>
+                            <option value="A_NEG">A-</option>
+                            <option value="B_POS">B+</option>
+                            <option value="B_NEG">B-</option>
+                            <option value="AB_POS">AB+</option>
+                            <option value="AB_NEG">AB-</option>
+                            <option value="O_POS">O+</option>
+                            <option value="O_NEG">O-</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Donor ID</th>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Blood Group</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>City</th>
+                                <th>Last Donation</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="donor : ${donors}">
+                                <td>
+                                    <span class="badge bg-primary" th:text="${donor.id}">#001</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-2">D</div>
+                                        <div>
+                                            <div th:text="${donor.name}">John Doe</div>
+                                            <small class="text-muted" th:text="${donor.email}">john@example.com</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td th:text="${donor.phone}">+1 234 567 8900</td>
+                                <td>
+                                    <span class="badge badge-danger" th:text="${donor.bloodGroup}">A+</span>
+                                </td>
+                                <td th:text="${donor.age}">28</td>
+                                <td th:text="${donor.gender}">Male</td>
+                                <td th:text="${donor.city}">New York</td>
+                                <td th:text="${donor.lastDonationDate != null ? #temporals.format(donor.lastDonationDate, 'MMM dd, yyyy') : 'Never'}">Jan 15, 2024</td>
+                                <td>
+                                    <span class="badge badge-success">Active</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline">
+                                            <i class="fas fa-calendar-plus"></i>
+                                            Schedule
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted">
+                        Showing <span th:text="${(currentPage * 10) + 1}">1</span> to 
+                        <span th:text="${(currentPage * 10) + 10}">10</span> of 
+                        <span th:text="${totalItems}">25</span> donors
+                    </div>
+                    <nav>
+                        <ul class="pagination mb-0">
+                            <li class="page-item" th:if="${currentPage > 0}">
+                                <a class="page-link" th:href="@{'/donors?page=' + (currentPage - 1)}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                                th:classappend="${i == currentPage ? 'active' : ''}">
+                                <a class="page-link" th:href="@{'/donors?page=' + ${i}}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:if="${currentPage < totalPages - 1}">
+                                <a class="page-link" th:href="@{'/donors?page=' + (currentPage + 1)}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleForm() {
+    const form = document.getElementById('donorForm');
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+// Mobile menu toggle
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+}
+
+// Notification dropdown toggle
+function toggleNotifications() {
+    const notificationMenu = document.getElementById('notificationMenu');
+    if (notificationMenu.style.display === 'none' || notificationMenu.style.display === '') {
+        notificationMenu.style.display = 'block';
+    } else {
+        notificationMenu.style.display = 'none';
+    }
+}
+
+// Close notifications when clicking outside
+document.addEventListener('click', function(event) {
+    const notificationDropdown = document.querySelector('.notification-dropdown');
+    const notificationMenu = document.getElementById('notificationMenu');
+    
+    if (notificationDropdown && !notificationDropdown.contains(event.target)) {
+        if (notificationMenu) {
+            notificationMenu.style.display = 'none';
+        }
+    }
+});
+
+// Set active navigation link
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath || 
+            (currentPath.startsWith('/donors') && link.getAttribute('href') === '/donors')) {
+            link.classList.add('active');
+        }
+    });
+});
+</script>
+</body>
+</html>

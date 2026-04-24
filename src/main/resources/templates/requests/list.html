@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Blood Requests</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+</head>
+<body>
+<header class="navbar">
+    <div class="nav-left">
+        <button class="hamburger" onclick="toggleMenu()">☰</button>
+        <h1>Blood Bank</h1>
+    </div>
+    <nav id="nav" class="nav-links">
+        <a th:href="@{/}">Home</a>
+        <a th:href="@{/donors}">Donors</a>
+        <a th:href="@{/requests}">Requests</a>
+        <a th:href="@{/stock}">Stock</a>
+    </nav>
+    <div class="nav-auth">
+        <span sec:authorize="isAuthenticated()">
+            <form th:action="@{/logout}" method="post" style="display:inline">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit">Logout</button>
+            </form>
+        </span>
+        <span sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">Login</a>
+            <a th:href="@{/signup}">Sign up</a>
+        </span>
+    </div>
+</header>
+<main class="container py-4">
+    <section>
+        <h2>Search Filters</h2>
+        <form method="get" th:action="@{/requests}" class="row g-2 align-items-end">
+            <div class="col-sm-3">
+                <label class="form-label">Blood Group</label>
+                <select class="form-select" name="group">
+                    <option th:selected="${selectedGroup == null}" value="">All</option>
+                    <option th:each="g : ${bloodGroups}" th:value="${g}" th:text="${g}" th:selected="${selectedGroup == g}"></option>
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">
+                    <option th:selected="${selectedStatus == null}" value="">All</option>
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${selectedStatus == s}"></option>
+                </select>
+            </div>
+            <div class="col-sm-6">
+                <button class="btn btn-danger me-2" type="submit">Apply</button>
+                <a class="btn btn-outline-secondary" th:href="@{/requests}">Reset</a>
+            </div>
+        </form>
+    </section>
+
+    <section>
+        <h2>New Request</h2>
+        <form th:action="@{/requests}" th:object="${request}" method="post" class="row g-3">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div>
+                <label class="form-label">Patient Name</label>
+                <input class="form-control" type="text" th:field="*{patientName}" required />
+                <div class="error" th:if="${#fields.hasErrors('patientName')}" th:errors="*{patientName}"></div>
+            </div>
+            <div>
+                <label class="form-label">Hospital</label>
+                <input class="form-control" type="text" th:field="*{hospitalName}" required />
+                <div class="error" th:if="${#fields.hasErrors('hospitalName')}" th:errors="*{hospitalName}"></div>
+            </div>
+            <div>
+                <label class="form-label">Requester Name</label>
+                <input class="form-control" type="text" th:field="*{requesterName}" required />
+                <div class="error" th:if="${#fields.hasErrors('requesterName')}" th:errors="*{requesterName}"></div>
+            </div>
+            <div>
+                <label class="form-label">Blood Group</label>
+                <select class="form-select" th:field="*{bloodGroup}">
+                    <option th:each="g : ${bloodGroups}" th:value="${g}" th:text="${g}"></option>
+                </select>
+                <div class="error" th:if="${#fields.hasErrors('bloodGroup')}" th:errors="*{bloodGroup}"></div>
+            </div>
+            <div>
+                <label class="form-label">Units</label>
+                <input class="form-control" type="number" min="1" th:field="*{unitsRequested}" required />
+                <div class="error" th:if="${#fields.hasErrors('unitsRequested')}" th:errors="*{unitsRequested}"></div>
+            </div>
+            <div>
+                <label class="form-label">Reason</label>
+                <textarea class="form-control" rows="2" th:field="*{reason}"></textarea>
+            </div>
+            <button class="btn btn-danger" type="submit">Submit</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>All Requests</h2>
+        <table class="table table-striped">
+            <thead class="table-light">
+            <tr>
+                <th>Patient</th>
+                <th>Hospital</th>
+                <th>Requester</th>
+                <th>Group</th>
+                <th>Units</th>
+                <th>Status</th>
+                <th>Approved By</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${requests}">
+                <td th:text="${r.patientName}"></td>
+                <td th:text="${r.hospitalName}"></td>
+                <td th:text="${r.requesterName}"></td>
+                <td th:text="${r.bloodGroup}"></td>
+                <td th:text="${r.unitsRequested}"></td>
+                <td th:text="${r.status}"></td>
+                <td th:text="${r.approvedBy}"></td>
+                <td>
+                    <form th:if="${r.status.name() == 'PENDING'}" th:action="@{'/requests/' + ${r.id} + '/approve'}" method="post" style="display:inline" sec:authorize="hasRole('ADMIN')">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button class="btn btn-success btn-sm" type="submit">Approve</button>
+                    </form>
+                    <form th:if="${r.status.name() == 'PENDING'}" th:action="@{'/requests/' + ${r.id} + '/reject'}" method="post" style="display:inline" sec:authorize="hasRole('ADMIN')">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Reject</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+<script th:src="@{/js/app.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
